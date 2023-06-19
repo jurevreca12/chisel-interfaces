@@ -20,6 +20,10 @@ import chisel3.util._
 import chiseltest._
 
 class AXIStreamDriver[T <: Data](x: AXIStreamIO[T]) {
+  def getBusWidth(): Int = {
+    x.bits.getWidth
+  }
+
   def initSource(): this.type = {
     x.valid.poke(false.B)
     this
@@ -28,15 +32,13 @@ class AXIStreamDriver[T <: Data](x: AXIStreamIO[T]) {
   def enqueue(data: T, last: Boolean, clock: Clock): Unit = timescope {
     x.bits.poke(data)
     x.valid.poke(true.B)
-		x.last.poke(last.B)
-    fork
-      .withRegion(Monitor) {
-        while (x.ready.peek().litToBoolean == false) {
-          clock.step(1)
+	x.last.poke(last.B)
+    fork.withRegion(Monitor) {
+        while (!x.ready.peek().litToBoolean) {
+          clock.step()
         }
-      }
-      .joinAndStep(clock)
-		x.last.poke(false.B)
+    }.joinAndStep(clock)
+	x.last.poke(false.B)
   }
 
   def enqueuePacket(data: Seq[T], clock: Clock): Unit = timescope {
@@ -48,16 +50,14 @@ class AXIStreamDriver[T <: Data](x: AXIStreamIO[T]) {
   def dequeuePacket(clock: Clock): Seq[BigInt] = {
     var result: Seq[BigInt] = Seq()
     var value: BigInt = 0
-    var last: Boolean = false
     x.ready.poke(true.B)
-    while (!last) {
-      fork.withRegion(Monitor) {
+    fork.withRegion(Monitor) {
+    do {
         waitForValid(clock)
         x.valid.expect(true.B)
         result = result :+ x.bits.peek().litValue
-        last = x.last.peek().litToBoolean
-      }.joinAndStep(clock)
-    }
+    } while(!x.last.peek().litToBoolean)
+    }.joinAndStep(clock)
     result
   }
 
