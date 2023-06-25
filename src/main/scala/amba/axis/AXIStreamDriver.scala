@@ -19,6 +19,7 @@ import chisel3._
 import chisel3.util._
 import chiseltest._
 
+
 class AXIStreamDriver[T <: Data](x: AXIStreamIO[T]) {
   def getBusWidth(): Int = {
     x.bits.getWidth
@@ -34,9 +35,9 @@ class AXIStreamDriver[T <: Data](x: AXIStreamIO[T]) {
     x.valid.poke(true.B)
 	x.last.poke(last.B)
     fork.withRegion(Monitor) {
-        while (!x.ready.peek().litToBoolean) {
-          clock.step()
-        }
+    while (!x.ready.peek().litToBoolean) {
+      clock.step()
+    }
     }.joinAndStep(clock)
 	x.last.poke(false.B)
   }
@@ -51,12 +52,15 @@ class AXIStreamDriver[T <: Data](x: AXIStreamIO[T]) {
     var result: Seq[BigInt] = Seq()
     var value: BigInt = 0
     x.ready.poke(true.B)
-    fork.withRegion(Monitor) {
-    do {
+    fork {
+    while(!x.last.peek().litToBoolean) {
         waitForValid(clock)
         x.valid.expect(true.B)
         result = result :+ x.bits.peek().litValue
-    } while(!x.last.peek().litToBoolean)
+        if (!x.last.peek().litToBoolean) {
+            clock.step()
+        }
+    }
     }.joinAndStep(clock)
     result
   }
