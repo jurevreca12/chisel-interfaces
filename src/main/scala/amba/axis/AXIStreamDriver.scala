@@ -50,7 +50,6 @@ class AXIStreamDriver[T <: Data](x: AXIStreamIO[T]) {
   
   def dequeuePacket(clock: Clock): Seq[BigInt] = {
     var result: Seq[BigInt] = Seq()
-    var value: BigInt = 0
     var isLast = false
     x.ready.poke(true.B)
     fork {
