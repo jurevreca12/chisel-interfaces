@@ -16,7 +16,6 @@
 package interfaces.amba.axis
 
 import chisel3._
-import chisel3.util._
 import chiseltest._
 
 
