@@ -29,7 +29,7 @@ class AXIStreamDriver[T <: Data](x: AXIStreamIO[T]) {
     this
   }
 
-  def enqueue(data: T, last: Boolean, clock: Clock): Unit = timescope {
+  def enqueue(data: Vec[T], last: Boolean, clock: Clock): Unit = timescope {
     x.bits.poke(data)
     x.valid.poke(true.B)
 	x.last.poke(last.B)
@@ -41,7 +41,7 @@ class AXIStreamDriver[T <: Data](x: AXIStreamIO[T]) {
 	x.last.poke(false.B)
   }
 
-  def enqueuePacket(data: Seq[T], clock: Clock): Unit = timescope {
+  def enqueuePacket(data: Seq[Vec[T]], clock: Clock): Unit = timescope {
     for (elt <- data) {
       enqueue(elt, elt eq data.last, clock)
     }
@@ -74,7 +74,7 @@ class AXIStreamDriver[T <: Data](x: AXIStreamIO[T]) {
     }
   }
 
-  def expectDequeue(data: T, clock: Clock): Unit = timescope {
+  def expectDequeue(data: Vec[T], clock: Clock): Unit = timescope {
     x.ready.poke(true.B)
     fork
       .withRegion(Monitor) {
@@ -85,7 +85,7 @@ class AXIStreamDriver[T <: Data](x: AXIStreamIO[T]) {
       .joinAndStep(clock)
   }
 
-  def expectDequeueSeq(data: Seq[T], clock: Clock): Unit = timescope {
+  def expectDequeueSeq(data: Seq[Vec[T]], clock: Clock): Unit = timescope {
     for (elt <- data) {
       expectDequeue(elt, clock)
     }

@@ -18,19 +18,15 @@ package interfaces.amba.axis
 import chisel3._
 import chisel3.util._
 
-class AXIStreamIO[+T <: Data](gen: T) extends ReadyValidIO[T](gen) {
+class AXIStreamIO[T <: Data](gen: T, beats: Int) extends ReadyValidIO[Vec[T]](Vec(beats, gen)) {
 	// We extend the ready-valid interface with the last signal
 	val last = Output(Bool())
+
+  def beats: Int = this.bits.length // how many beats in the vector
 }
 
 /** This factory adds a decoupled handshaking protocol to a data bundle. */
 object AXIStream {
-  def apply[T <: Data](gen: T): AXIStreamIO[T] = new AXIStreamIO(gen)
-
-  private final class EmptyBundle extends Bundle
-
-  def apply(): AXIStreamIO[Data] = apply(new EmptyBundle)
-
-  def empty: AXIStreamIO[Data] = AXIStream()
+  def apply[T <: Data](gen: T, beats: Int): AXIStreamIO[T] = new AXIStreamIO(gen, beats)
 }
 
